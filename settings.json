@@ -1,0 +1,10 @@
+{
+    "app_name": "Workout Guide",
+    "version": "1.0",
+    "default_workout_duration": 30,
+    "units": {
+        "weight": "kg",
+        "distance": "km"
+    },
+    "log_file": "workout_log.txt"
+}
