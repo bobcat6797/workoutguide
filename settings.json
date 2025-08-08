@@ -3,7 +3,7 @@
     "version": "1.0",
     "default_workout_duration": 30,
     "units": {
-        "weight": "kg",
+        "weight": "lb",
         "distance": "km"
     },
     "log_file": "workout_log.txt"

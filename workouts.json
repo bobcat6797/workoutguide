@@ -1,10 +1,10 @@
 [
     {
         "date": "2025-08-08",
-        "type": "Weightlifting",
-        "duration": "30",
+        "type": "weightlifting",
+        "duration": "29",
         "notes": "",
         "muscle": "chest",
-        "weights": "25"
+        "weights": "20"
     }
 ]
