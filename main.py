@@ -32,7 +32,7 @@ def settings_menu(user_dir):
         print("u: Change weight unit")
         print("m: Back to main menu")
         print("==============================")
-        choice = input("Select an option (1-2): ")
+        choice = input("Select an option: ")
         if choice == 'u':
             new_unit = 'kg' if current_unit == 'lb' else 'lb'
             confirm = input(f"Change weight unit to {new_unit}? (y/n): ").strip().lower()
