@@ -8,22 +8,26 @@ from workout_manager import manage_workouts
 
 def settings_menu(user_dir):
     from config import load_config, set_weight_unit
-    # Load about info
+    # Load about info (read-only)
     about_path = 'about.json'
+    app_name = None
+    version = None
     if os.path.exists(about_path):
-        with open(about_path, 'r') as f:
-            about = json.load(f)
-        app_name = about.get('app_name', 'Workout Guide')
-        version = about.get('version', '1.0')
-    else:
-        app_name = 'Workout Guide'
-        version = '1.0'
+        try:
+            with open(about_path, 'r') as f:
+                about = json.load(f)
+            app_name = about.get('app_name')
+            version = about.get('version')
+        except Exception:
+            pass
     while True:
         config = load_config(os.path.join(user_dir, 'settings.json'))
         current_unit = config['units']['weight']
         print("\n===========Settings===========")
-        print(f"{app_name}")
-        print(f"Version: {version}\n")
+        if app_name:
+            print(f"{app_name}")
+        if version:
+            print(f"Version: {version}\n")
         print(f"Current weight unit: {current_unit}")
         print("u: Change weight unit")
         print("m: Back to main menu")

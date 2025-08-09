@@ -102,7 +102,7 @@ def manage_workouts(user_dir):
         print("v: View workouts")
         print("e: Edit a workout")
         print("d: Delete a workout")
-        print("b: Back to main menu")
+        print("m: Back to main menu")
         print("=====================================")
         choice = input("\nSelect an option: ").strip().lower()
         if choice == 'v':
@@ -115,7 +115,7 @@ def manage_workouts(user_dir):
             view_workouts(user_dir)
             index = int(input("Enter the workout number to delete: ")) - 1
             delete_workout(index, user_dir)
-        elif choice == 'b':
+        elif choice == 'm':
             break
         else:
             print("Invalid option. Try again.")
