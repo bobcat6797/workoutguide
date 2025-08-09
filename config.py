@@ -33,27 +33,21 @@ def set_weight_unit(unit, file_path='settings.json'):
 def convert_weights(current_unit, new_unit):
     """Convert all logged weights from current unit to new unit."""
     conversion_factor = 2.20462 if new_unit == 'lb' else 0.453592
-    log_file_path = 'workout_log.txt'
-    
-    if not os.path.exists(log_file_path):
-        print("No workout log found.")
+    workouts_file = 'workouts.json'
+    if not os.path.exists(workouts_file):
+        print("No workouts found.")
         return
-
-    updated_workouts = []
-    
-    with open(log_file_path, 'r') as log_file:
-        for line in log_file:
-            workout = json.loads(line)
-            if 'weights' in workout:
-                weight = float(workout['weights'])
-                # Convert weight
-                converted_weight = weight * conversion_factor
-                workout['weights'] = round(converted_weight, 2)  # Round to 2 decimal places
-            updated_workouts.append(workout)
-
-    # Write the updated workouts back to the log file
-    with open(log_file_path, 'w') as log_file:
-        for workout in updated_workouts:
-            log_file.write(json.dumps(workout) + '\n')
-
+    with open(workouts_file, 'r') as file:
+        try:
+            workouts = json.load(file)
+        except json.JSONDecodeError:
+            print("Error decoding JSON from the workouts file.")
+            return
+    for workout in workouts:
+        if 'weights' in workout:
+            weight = float(workout['weights'])
+            converted_weight = weight * conversion_factor
+            workout['weights'] = round(converted_weight, 2)
+    with open(workouts_file, 'w') as file:
+        json.dump(workouts, file, indent=4)
     print("All weights have been converted to the new unit.")

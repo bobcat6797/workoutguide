@@ -23,27 +23,20 @@ def log_workout():
     
     # Automatically use today's date
     workout['date'] = datetime.datetime.now().strftime("%Y-%m-%d")
-    workout['type'] = input("Enter the type of workout (e.g., Running, Weightlifting): ")
-    workout['duration'] = input("Enter the duration of the workout (in minutes): ")
+    workout['type'] = input("Enter the type of workout (e.g., Cardio, Strength): ")
+
+    if workout['type'].strip().lower() == "strength":
+        muscle_groups = load_muscle_groups()
+        workout['muscle'] = input(f"Enter the muscle group worked ({', '.join(muscle_groups)}): ").strip().lower()
+        # Validate muscle group
+        if workout['muscle'] not in muscle_groups:
+            print("Invalid muscle group. Please enter a valid muscle group.")
+            return
+        config = load_config()
+        weight_unit = config['units']['weight']
+        workout['weights'] = input(f"Enter the weights used in ({weight_unit}): ")
     workout['notes'] = input("Enter any additional notes: ")
-
-    # Load muscle groups and prompt for the muscle group worked
-    muscle_groups = load_muscle_groups()
-    workout['muscle'] = input(f"Enter the muscle group worked ({', '.join(muscle_groups)}): ").strip().lower()
-
-    # Validate muscle group
-    if workout['muscle'] not in muscle_groups:
-        print("Invalid muscle group. Please enter a valid muscle group.")
-        return
-
-    # Load the current weight unit from config
-    config = load_config()
-    weight_unit = config['units']['weight']
-
-    # Ask for weights if the workout type is Weightlifting
-    if workout['type'].strip().lower() == "weightlifting":
-        workout['weights'] = input(f"Enter the weights used ({weight_unit}): ")
-
+    # For cardio, skip muscle/weight
     # Save the workout to workouts.json
     workouts = load_workouts()
     workouts.append(workout)
