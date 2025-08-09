@@ -10,6 +10,11 @@ from workout_manager import manage_workouts
 # Always use absolute paths for data files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+def program_quit():
+    """Exit the program gracefully."""
+    print("\nExiting the application\n")
+    sys.exit()
+
 def settings_menu(user_dir):
     from config import load_config, set_weight_unit
     # Load about info (read-only)
@@ -25,7 +30,7 @@ def settings_menu(user_dir):
         except Exception:
             pass
     while True:
-        config = load_config(os.path.join(user_dir, 'settings.json'))
+        config = load_config(user_dir)
         current_unit = config['units']['weight']
         print("\n===========Settings===========")
         if app_name:
@@ -48,7 +53,7 @@ def settings_menu(user_dir):
         elif choice == 'm':
             break
         else:
-            print("Invalid option. Try again.")
+            print("\nInvalid option. Try again.")
 
 def main_menu(user_dir):
     from log_workout import log_workout
@@ -73,12 +78,11 @@ def main_menu(user_dir):
         elif choice == 't':
             settings_menu(user_dir)
         elif choice == 'x':
-            print("Exiting the application")
-            sys.exit()
+            program_quit()
         elif choice == 'u':
             user_menu()
         else:
-            print("Invalid option. Try again.")
+            print("\nInvalid option. Try again.")
 
 def user_menu():
     import datetime
@@ -115,7 +119,7 @@ def user_menu():
                     set_last_login(user_dir)
                     return user_dir
                 else:
-                    print("Invalid user number.")
+                    print("\nInvalid user number.")
             elif choice == 'e':
                 # Edit users menu
                 while True:
@@ -132,12 +136,12 @@ def user_menu():
                                 user_to_delete = os.path.join(users_dir, users[idx])
                                 import shutil
                                 shutil.rmtree(user_to_delete)
-                                print("User deleted.")
+                                print("\nUser deleted.")
                                 break
                             else:
-                                print("Invalid user number.")
+                                print("\nInvalid user number.")
                         except ValueError:
-                            print("Invalid input.")
+                            print("\nInvalid input.")
                     elif edit_choice == 'r':
                         idx = input("Enter user number to rename: ")
                         try:
@@ -146,36 +150,34 @@ def user_menu():
                                 old_user_dir = os.path.join(users_dir, users[idx])
                                 new_name = input("Enter new username: ").strip()
                                 if not new_name:
-                                    print("Username cannot be empty.")
+                                    print("\nUsername cannot be empty.")
                                     continue
                                 new_user_dir = os.path.join(users_dir, new_name)
                                 if os.path.exists(new_user_dir):
-                                    print("A user with that name already exists.")
+                                    print("\nA user with that name already exists.")
                                     continue
                                 os.rename(old_user_dir, new_user_dir)
-                                print("User renamed.")
+                                print("\nUser renamed.")
                                 break
                             else:
-                                print("Invalid user number.")
+                                print("\nInvalid user number.")
                         except ValueError:
-                            print("Invalid input.")
+                            print("\nInvalid input.")
                     elif edit_choice == 'u':
                         break
                     else:
-                        print("Invalid option. Try again.")
+                        print("\nInvalid option. Try again.")
             elif choice == 'x':
-                print("Exiting the application")
-                sys.exit()
+                program_quit()
             else:
-                print("Invalid option. Try again.")
+                print("\nInvalid option. Try again.")
         else:
             print("Create a new user to get started")
             username = input("Enter new username or type 'exit' to quit: ").strip()
             if username.lower() in ['exit', 'x']:
-                print("Exiting the application")
-                sys.exit()
+                program_quit()
             if not username:
-                print("Username cannot be empty.")
+                print("\nUsername cannot be empty.")
                 continue
             user_dir = os.path.join(users_dir, username)
             os.makedirs(user_dir, exist_ok=True)

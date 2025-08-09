@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+from config import get_weight_unit
 
 def load_workouts(file_path):
     """Load workouts from a JSON file."""
@@ -26,18 +27,15 @@ def view_workouts(user_dir):
     """View all workouts."""
     workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     if not workouts:
-        print("No workouts found.")
         return
 
     # Print header with new order: Type, Date, Muscle, Weights, Notes
     print("\n")
     print(f"{'#':<3} {'Type':<10} {'Date':<18} {'Muscle':<12} {'Weights':<10} {'Notes':<20}")
     print('-' * 75)
-    # Load weight unit from settings.json
+    # Get weight unit using config helper
     try:
-        with open(os.path.join(user_dir, 'settings.json'), 'r') as f:
-            settings = json.load(f)
-            weight_unit = settings['units']['weight']
+        weight_unit = get_weight_unit(user_dir)
     except Exception:
         weight_unit = ''
     for index, workout in enumerate(workouts):
@@ -61,7 +59,7 @@ def edit_workout(index, user_dir):
     """Edit a specific workout."""
     workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     if index < 0 or index >= len(workouts):
-        print("Invalid workout index.")
+        print("Invalid workout index")
         return
 
     workout = workouts[index]
@@ -74,9 +72,26 @@ def edit_workout(index, user_dir):
     new_date = input("Enter the new date (YYYY-MM-DD): ")
     if new_date.strip():
         workout['date'] = new_date
-    workout['notes'] = input("Enter any new additional notes: ")
     if workout['type'].strip().lower() == "strength":
-        workout['weights'] = input("Enter the weights used: ")
+        try:
+            weight_unit = get_weight_unit(user_dir)
+        except Exception:
+            weight_unit = ''
+        while True:
+            weights_input = input(f"Enter the weights used in ({weight_unit}): ").strip()
+            if not weights_input:
+                print("\nInvalid weights. Please enter a number between 0 and 500.")
+                continue
+            try:
+                weights_val = float(weights_input)
+                if 0 <= weights_val <= 500:
+                    workout['weights'] = weights_input
+                    break
+                else:
+                    print("\nInvalid weights. Please enter a number between 0 and 500.")
+            except ValueError:
+                print("\nInvalid weights. Please enter a number between 0 and 500.")
+    workout['notes'] = input("Enter any notes: ")
     save_workouts(workouts, os.path.join(user_dir, 'workouts.json'))
 
 def delete_workout(index, user_dir):
@@ -96,7 +111,7 @@ def manage_workouts(user_dir):
     while True:
         workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
         if not workouts:
-            print("No workouts available")
+            print("\nNo workouts available")
             break
         print("\n===========WORKOUT MANAGER===========")
         print("v: View workouts")
@@ -104,7 +119,7 @@ def manage_workouts(user_dir):
         print("d: Delete a workout")
         print("m: Back to main menu")
         print("=====================================")
-        choice = input("\nSelect an option: ").strip().lower()
+        choice = input("Select an option: ").strip().lower()
         if choice == 'v':
             view_workouts(user_dir)
         elif choice == 'e':

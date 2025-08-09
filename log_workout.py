@@ -1,7 +1,7 @@
 import json
 import datetime
 import os
-from config import load_config
+from config import load_config, get_weight_unit
 
 def load_muscle_groups(file_path=None):
     """Load muscle groups from a JSON file."""
@@ -9,14 +9,14 @@ def load_muscle_groups(file_path=None):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, 'muscle_groups.json')
     if not os.path.exists(file_path):
-        print("Muscle groups file not found.")
+        print("\nMuscle groups file not found")
         return []
     with open(file_path, 'r') as file:
         try:
             data = json.load(file)
             return data.get('muscle_groups', [])
         except json.JSONDecodeError:
-            print("Error decoding JSON from the muscle groups file.")
+            print("\nError decoding JSON from the muscle groups file")
             return []
 
 def log_workout(user_dir):
@@ -30,17 +30,32 @@ def log_workout(user_dir):
             workout['type'] = workout_type
             break
         else:
-            print("Workout type cannot be blank. Please enter a workout type.")
+            print("\nWorkout type cannot be blank. Please enter a workout type.")
     if workout['type'].strip().lower() == "strength":
         muscle_groups = load_muscle_groups()
         workout['muscle'] = input(f"Enter the muscle group worked ({', '.join(muscle_groups)}): ").strip().lower()
         # Validate muscle group
         if workout['muscle'] not in muscle_groups:
-            print("Invalid muscle group. Please enter a valid muscle group.")
+            print("\nInvalid muscle group. Please enter a valid muscle group.")
             return
-        config = load_config(os.path.join(user_dir, 'settings.json'))
-        weight_unit = config['units']['weight']
-        workout['weights'] = input(f"Enter the weights used in ({weight_unit}): ")
+        try:
+            weight_unit = get_weight_unit(user_dir)
+        except Exception:
+            weight_unit = ''
+        while True:
+            weights_input = input(f"Enter the weights used in ({weight_unit}): ").strip()
+            if not weights_input:
+                print("\nInvalid weights. Please enter a number between 0 and 500.")
+                continue
+            try:
+                weights_val = float(weights_input)
+                if 0 <= weights_val <= 500:
+                    workout['weights'] = weights_input
+                    break
+                else:
+                    print("\nInvalid weights. Please enter a number between 0 and 500.")
+            except ValueError:
+                print("\nInvalid weights. Please enter a number between 0 and 500.")
     workout['notes'] = input("Enter any additional notes: ")
     # Save the workout to the user's workouts.json
     workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
@@ -57,7 +72,7 @@ def load_workouts(file_path='workouts.json'):
             workouts = json.load(file)
             return workouts
         except json.JSONDecodeError:
-            print("Error decoding JSON from the workouts file.")
+            print("\nError decoding JSON from the workouts file.")
             return []
 
 def save_workouts(workouts, file_path='workouts.json'):
