@@ -1,3 +1,4 @@
+
 import json
 import sys
 import os
@@ -6,10 +7,13 @@ from log_workout import log_workout
 from stats import display_stats
 from workout_manager import manage_workouts
 
+# Always use absolute paths for data files
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def settings_menu(user_dir):
     from config import load_config, set_weight_unit
     # Load about info (read-only)
-    about_path = 'about.json'
+    about_path = os.path.join(BASE_DIR, 'about.json')
     app_name = None
     version = None
     if os.path.exists(about_path):
