@@ -1,8 +1,0 @@
-{
-    "app_name": "Workout Guide",
-    "version": "1.0",
-    "units": {
-        "weight": "kg",
-        "distance": "km"
-    }
-}

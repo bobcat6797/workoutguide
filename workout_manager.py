@@ -2,8 +2,10 @@ import json
 import os
 import datetime
 
-def load_workouts(file_path='workouts.json'):
+def load_workouts(file_path):
     """Load workouts from a JSON file."""
+    if not os.path.exists(file_path):
+        return []
     if not os.path.exists(file_path):
         return []
     
@@ -15,14 +17,14 @@ def load_workouts(file_path='workouts.json'):
             print("Error decoding JSON from the workouts file.")
             return []
 
-def save_workouts(workouts, file_path='workouts.json'):
+def save_workouts(workouts, file_path):
     """Save workouts to a JSON file."""
     with open(file_path, 'w') as file:
         json.dump(workouts, file, indent=4)
 
-def view_workouts():
+def view_workouts(user_dir):
     """View all workouts."""
-    workouts = load_workouts()
+    workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     if not workouts:
         print("No workouts found.")
         return
@@ -33,7 +35,7 @@ def view_workouts():
     print('-' * 75)
     # Load weight unit from settings.json
     try:
-        with open('settings.json', 'r') as f:
+        with open(os.path.join(user_dir, 'settings.json'), 'r') as f:
             settings = json.load(f)
             weight_unit = settings['units']['weight']
     except Exception:
@@ -55,16 +57,16 @@ def view_workouts():
             weights = f"{weights} {weight_unit}"
         print(f"{index + 1:<3} {workout['type']:<10} {formatted_date:<18} {str(workout.get('muscle', 'N/A')):<12} {weights:<10} {workout.get('notes', ''):<20}")
 
-def edit_workout(index):
+def edit_workout(index, user_dir):
     """Edit a specific workout."""
-    workouts = load_workouts()
+    workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     if index < 0 or index >= len(workouts):
         print("Invalid workout index.")
         return
 
     workout = workouts[index]
     print("Current workouts:")
-    view_workouts()
+    view_workouts(user_dir)
     print(f"Editing workout #{index + 1}:")
     new_type = input("Enter the new type of workout: ")
     if new_type.strip():
@@ -75,49 +77,49 @@ def edit_workout(index):
     workout['notes'] = input("Enter any new additional notes: ")
     if workout['type'].strip().lower() == "strength":
         workout['weights'] = input("Enter the weights used: ")
-    save_workouts(workouts)
+    save_workouts(workouts, os.path.join(user_dir, 'workouts.json'))
 
-def delete_workout(index):
+def delete_workout(index, user_dir):
     """Delete a specific workout."""
-    workouts = load_workouts()
+    workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     print("Current workouts:")
-    view_workouts()
+    view_workouts(user_dir)
     if index < 0 or index >= len(workouts):
         print("Invalid workout index")
         return
     workouts.pop(index)
-    save_workouts(workouts)
+    save_workouts(workouts, os.path.join(user_dir, 'workouts.json'))
     print("Workout deleted successfully.")
 
-def manage_workouts():
+def manage_workouts(user_dir):
     """Manage workouts: view, edit, or delete."""
     while True:
-        workouts = load_workouts()
+        workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
         if not workouts:
             print("No workouts available")
             break
-        print("\n===========Workout Manager===========")
-        print("1. View workouts")
-        print("2. Edit a workout")
-        print("3. Delete a workout")
-        print("4. Back to main menu")
+        print("\n===========WORKOUT MANAGER===========")
+        print("v: View workouts")
+        print("e: Edit a workout")
+        print("d: Delete a workout")
+        print("b: Back to main menu")
         print("=====================================")
-        choice = input("\nPlease select an option: ")
-        if choice == '1':
-            view_workouts()
-        elif choice == '2':
-            view_workouts()
+        choice = input("\nSelect an option: ").strip().lower()
+        if choice == 'v':
+            view_workouts(user_dir)
+        elif choice == 'e':
+            view_workouts(user_dir)
             index = int(input("Enter the workout number to edit: ")) - 1
-            edit_workout(index)
-        elif choice == '3':
-            view_workouts()
+            edit_workout(index, user_dir)
+        elif choice == 'd':
+            view_workouts(user_dir)
             index = int(input("Enter the workout number to delete: ")) - 1
-            delete_workout(index)
-        elif choice == '4':
+            delete_workout(index, user_dir)
+        elif choice == 'b':
             break
         else:
-            print("Invalid option. Please try again.")
+            print("Invalid option. Try again.")
 
 # Example usage
 if __name__ == "__main__":
-    manage_workouts()
+    print("Please run from main.py")

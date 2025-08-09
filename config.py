@@ -18,22 +18,18 @@ def set_weight_unit(unit, file_path='settings.json'):
     config = load_config(file_path)
     if unit not in ['kg', 'lb']:
         raise ValueError("Weight unit must be 'kg' or 'lb'.")
-    
     current_unit = config['units']['weight']
-    
     if current_unit != unit:
-        convert_weights(current_unit, unit)
-
+        user_dir = os.path.dirname(file_path)
+        convert_weights(current_unit, unit, os.path.join(user_dir, 'workouts.json'))
     config['units']['weight'] = unit
-    
     with open(file_path, 'w') as file:
         json.dump(config, file, indent=4)
     print(f"Weight unit set to {unit}.")
 
-def convert_weights(current_unit, new_unit):
+def convert_weights(current_unit, new_unit, workouts_file):
     """Convert all logged weights from current unit to new unit."""
     conversion_factor = 2.20462 if new_unit == 'lb' else 0.453592
-    workouts_file = 'workouts.json'
     if not os.path.exists(workouts_file):
         print("No workouts found.")
         return

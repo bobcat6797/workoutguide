@@ -1,11 +1,12 @@
 import json
 import os
 
-def display_stats():
+def display_stats(user_dir):
     """Display workout statistics."""
-    workouts_file = 'workouts.json'
+    import os
+    workouts_file = os.path.join(user_dir, 'workouts.json')
     if not os.path.exists(workouts_file):
-        print("No workouts found")
+        print("No workouts found.")
         return
     with open(workouts_file, 'r') as file:
         try:
@@ -21,6 +22,6 @@ def display_stats():
         print("\n")
         print("No workouts logged")
 
-# Example usage
-if __name__ == "__main__":
-    display_stats()
+    # Example usage
+    # if __name__ == "__main__":
+    #     display_stats('users/yourusername')

@@ -17,14 +17,18 @@ def load_muscle_groups(file_path='muscle_groups.json'):
             print("Error decoding JSON from the muscle groups file.")
             return []
 
-def log_workout():
+def log_workout(user_dir):
     """Log a workout entry."""
     workout = {}
-    
     # Automatically use today's date
     workout['date'] = datetime.datetime.now().strftime("%Y-%m-%d")
-    workout['type'] = input("Enter the type of workout (e.g., Cardio, Strength): ")
-
+    while True:
+        workout_type = input("Enter the type of workout (e.g., Cardio, Strength): ").strip()
+        if workout_type:
+            workout['type'] = workout_type
+            break
+        else:
+            print("Workout type cannot be blank. Please enter a workout type.")
     if workout['type'].strip().lower() == "strength":
         muscle_groups = load_muscle_groups()
         workout['muscle'] = input(f"Enter the muscle group worked ({', '.join(muscle_groups)}): ").strip().lower()
@@ -32,15 +36,14 @@ def log_workout():
         if workout['muscle'] not in muscle_groups:
             print("Invalid muscle group. Please enter a valid muscle group.")
             return
-        config = load_config()
+        config = load_config(os.path.join(user_dir, 'settings.json'))
         weight_unit = config['units']['weight']
         workout['weights'] = input(f"Enter the weights used in ({weight_unit}): ")
     workout['notes'] = input("Enter any additional notes: ")
-    # For cardio, skip muscle/weight
-    # Save the workout to workouts.json
-    workouts = load_workouts()
+    # Save the workout to the user's workouts.json
+    workouts = load_workouts(os.path.join(user_dir, 'workouts.json'))
     workouts.append(workout)
-    save_workouts(workouts)
+    save_workouts(workouts, os.path.join(user_dir, 'workouts.json'))
 
 def load_workouts(file_path='workouts.json'):
     """Load workouts from a JSON file."""
