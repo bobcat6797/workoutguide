@@ -52,7 +52,15 @@ def calculate_scores(workout_log, current_date=None):
     for w in last_week:
         if w[0] == "strength" and w[2] is not None:
             muscle = w[1]
-            weight = float(w[2].split()[0])  # Assuming weights are in format '10 lb'
+            if isinstance(w[2], (int, float)):
+                weight = float(w[2])
+            elif isinstance(w[2], str):
+                try:
+                    weight = float(w[2].split()[0])
+                except Exception:
+                    continue
+            else:
+                continue
             if muscle not in weight_progression:
                 weight_progression[muscle] = []
             weight_progression[muscle].append(weight)
