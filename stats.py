@@ -3,35 +3,21 @@ import os
 from datetime import datetime, timedelta
 from collections import Counter
 
-# Load muscle groups directly from JSON file at import time
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MUSCLE_GROUPS_PATH = os.path.join(BASE_DIR, 'muscle_groups.json')
-if os.path.exists(MUSCLE_GROUPS_PATH):
-    with open(MUSCLE_GROUPS_PATH, 'r') as f:
-        try:
-            _mg_data = json.load(f)
-            MUSCLE_GROUPS = _mg_data.get('muscle_groups', [])
-        except Exception:
-            MUSCLE_GROUPS = []
 
 # Configurable constants
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MUSCLE_GROUPS_PATH = os.path.join(BASE_DIR, 'muscle_groups.json' \
+'')
 MAX_WEEKLY_ENTRIES = 21           # Entry count limit per 7 days before overtraining risk kicks in
 OVERTRAIN_RISK_WEIGHT_BASE = 25   # Base risk points if over limit
 RISK_DECAY_DAYS = 7               # Days over which risk decays to zero without overtraining
 PERF_DECAY_START_DAYS = 3         # Days without workout before performance decay starts
 PERF_DECAY_RATE = 3               # Performance points lost per day after decay starts (up to zero)
-# Using muscle_groups
-musclegroups = os.path.join('muscle_groups.json')
-with open(musclegroups, 'r') as f:
-    try:
-        data = json.load(f)
-        MUSCLE_GROUPS = data.get('muscle_groups', [])
-    except json.JSONDecodeError:
-        MUSCLE_GROUPS = []
 
 def calculate_scores(workout_log, current_date=None):
     if current_date is None:
         current_date = datetime.now()
+
     two_weeks_ago = current_date - timedelta(days=14)
     week_ago = current_date - timedelta(days=7)
 
@@ -54,8 +40,10 @@ def calculate_scores(workout_log, current_date=None):
         areas_for_improvement.append(f"{entry_count} entries in last 7 days (limit: {MAX_WEEKLY_ENTRIES})")
 
     # Muscle focus check for last two weeks
+    # muscle_groups must be passed as an argument
     muscle_counts = Counter(w[1] for w in last_two_weeks if w[0] == "strength")
-    for muscle in MUSCLE_GROUPS:
+    muscle_groups = globals().get('muscle_groups', [])
+    for muscle in muscle_groups:
         if muscle_counts[muscle] == 0:
             areas_for_improvement.append(f"'{muscle}' not targeted in the last two weeks")
 
@@ -164,6 +152,17 @@ def display_stats(user_dir):
     else:
         print("No workouts logged")
         return
+    # Load muscle groups from muscle_groups.json using absolute path
+    muscle_groups = []
+    muscle_groups_path = os.path.join(BASE_DIR, 'muscle_groups.json')
+    if os.path.exists(muscle_groups_path):
+        with open(muscle_groups_path, 'r') as f:
+            try:
+                data = json.load(f)
+                muscle_groups = data.get('muscle_groups', [])
+            except Exception:
+                muscle_groups = []
+
     # Convert workouts to the required tuple format: (type, muscle, weights, weight_unit, date)
     workout_log = []
     for w in workouts:
@@ -174,17 +173,17 @@ def display_stats(user_dir):
         date = w.get('date', None)
         # Try to infer weight_unit if not present
         if not weight_unit and weights and isinstance(weights, str):
-            # Try to extract unit from weights string (e.g., '50 lb')
             parts = weights.split()
             if len(parts) == 2 and parts[0].replace('.', '', 1).isdigit():
                 weights, weight_unit = parts
-        # Convert weights to float if possible
         try:
             weights_val = float(weights) if weights is not None else None
         except Exception:
             weights_val = None
         workout_log.append((w_type, muscle, weights_val, weight_unit, date))
 
+    # Pass muscle_groups to calculate_scores
+    globals()['muscle_groups'] = muscle_groups
     perf_score, risk_score, risk_reasons = calculate_scores(workout_log)
     print(score_description(perf_score, risk_score, risk_reasons))
 
@@ -192,9 +191,9 @@ def display_stats(user_dir):
     two_weeks_ago = datetime.now() - timedelta(days=14)
     muscles_hit = set(
         w[1] for w in workout_log
-        if w[0] == "strength" and w[1] and w[4] and w[1] in MUSCLE_GROUPS and datetime.strptime(w[4], "%Y-%m-%d") >= two_weeks_ago
+        if w[0] == "strength" and w[1] and w[4] and w[1] in muscle_groups and datetime.strptime(w[4], "%Y-%m-%d") >= two_weeks_ago
     )
-    missing_muscles = [m for m in MUSCLE_GROUPS if m not in muscles_hit]
+    missing_muscles = [m for m in muscle_groups if m not in muscles_hit]
     if missing_muscles:
         print("\nAreas for Improvement:")
         for m in missing_muscles:
