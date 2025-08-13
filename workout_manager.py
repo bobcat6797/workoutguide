@@ -6,9 +6,9 @@ from config import get_weight_unit
 def load_workouts(file_path):
     """Load workouts from a JSON file."""
     if not os.path.exists(file_path):
+        print("\nWorkout history file not found")
         return []
-    if not os.path.exists(file_path):
-        return []
+    
     
     with open(file_path, 'r') as file:
         try:

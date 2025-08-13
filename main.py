@@ -68,6 +68,7 @@ def main_menu(user_dir):
         print("x: Exit")
         print("u: Back to user menu")
         print("===============================" )
+        print(user_dir)
         choice = input("Select an option: ").strip().lower()
         if choice == 'l':
             log_workout(user_dir)
