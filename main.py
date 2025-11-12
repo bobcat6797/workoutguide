@@ -1,6 +1,5 @@
 
 import json
-import sys
 import os
 from config import load_config, set_weight_unit
 from log_workout import log_workout
@@ -9,11 +8,6 @@ from workout_manager import manage_workouts
 
 # Always use absolute paths for data files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def program_quit():
-    """Exit the program gracefully."""
-    print("\nExiting the application\n")
-    sys.exit()
 
 def settings_menu(user_dir):
     from config import load_config, set_weight_unit

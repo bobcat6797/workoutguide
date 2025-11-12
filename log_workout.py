@@ -3,21 +3,6 @@ import datetime
 import os
 from config import load_config, get_weight_unit
 
-def load_muscle_groups(file_path=None):
-    """Load muscle groups from a JSON file."""
-    if file_path is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'muscle_groups.json')
-    if not os.path.exists(file_path):
-        print("\nMuscle groups file not found")
-        return []
-    with open(file_path, 'r') as file:
-        try:
-            data = json.load(file)
-            return data.get('muscle_groups', [])
-        except json.JSONDecodeError:
-            print("\nError decoding JSON from the muscle groups file")
-            return []
 
 def log_workout(user_dir):
     """Log a workout entry."""
