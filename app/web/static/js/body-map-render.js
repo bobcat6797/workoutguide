@@ -11,6 +11,37 @@ import { BODY_MAP } from "./body-map-data.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+const VIEW_SLUGS = {
+  anterior: new Set(BODY_MAP.anterior.map((r) => r.slug).filter(Boolean)),
+  posterior: new Set(BODY_MAP.posterior.map((r) => r.slug).filter(Boolean)),
+};
+
+// Which side to open on for a set of highlighted regions, so a back-dominant
+// exercise doesn't look untagged on the default front view. Only regions
+// unique to one side get a vote -- triceps/forearm/calves are drawn in both
+// views, so they say nothing about which side to show.
+//
+// Ties go to the side of the first slug that has one, which for an exercise's
+// region tags is the primary target (rank 1). Without that, an evenly split
+// exercise like a pull-up (upper-back + trapezius vs biceps + front-deltoids)
+// would open on the front and hide the muscle it's actually for. Falls back
+// to anterior when nothing votes at all.
+export function preferredView(slugs) {
+  let front = 0;
+  let back = 0;
+  let primary = null;
+  for (const slug of slugs || []) {
+    const inFront = VIEW_SLUGS.anterior.has(slug);
+    const inBack = VIEW_SLUGS.posterior.has(slug);
+    if (inFront === inBack) continue; // in both views, or in neither
+    if (inBack) back += 1;
+    else front += 1;
+    if (primary === null) primary = inBack ? "posterior" : "anterior";
+  }
+  if (back !== front) return back > front ? "posterior" : "anterior";
+  return primary || "anterior";
+}
+
 function computeBounds(viewData, pad) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const region of viewData) {

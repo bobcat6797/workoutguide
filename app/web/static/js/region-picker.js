@@ -7,7 +7,7 @@
 // how many regions -- tap order sets priority (1st tapped = primary
 // target, 2nd = secondary, and so on), shown in the hint text.
 
-import { createBodyMap } from "./body-map-render.js";
+import { createBodyMap, preferredView } from "./body-map-render.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("[data-region-picker]");
@@ -39,6 +39,20 @@ document.addEventListener("DOMContentLoaded", () => {
       : "Optional: tap to tag muscles, in priority order";
   };
 
+  // Flip to whichever side holds most of the selection. Only called when
+  // regions arrive from a prefill, never while the user is tapping -- doing
+  // it mid-tap would yank the figure out from under them.
+  const showPreferredView = () => {
+    const nextView = preferredView(selected);
+    highlighter.setView(nextView);
+    toggleButtons.forEach((b) =>
+      b.classList.toggle(
+        "is-active",
+        (b.dataset.viewToggle === "posterior" ? "posterior" : "anterior") === nextView
+      )
+    );
+  };
+
   // Picking a previously-logged exercise prefills its saved regions long
   // after this ran, so expose a setter (same pattern as setExerciseTags)
   // instead of leaving the map stuck on the selection read at load. main.js
@@ -46,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // yet, which is the case on the query-param path from the muscle map.
   window.setExerciseRegions = (slugs) => {
     selected = Array.isArray(slugs) ? slugs.filter(Boolean) : [];
+    showPreferredView(); // setView rebuilds polygons, so sync() must follow
     sync();
   };
 
@@ -68,5 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  if (selected.length) showPreferredView();
   sync();
 });

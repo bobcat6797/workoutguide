@@ -5,7 +5,7 @@
 // below, de-emphasized); tapping an item hands off to /exercises/new via
 // query params, where main.js's applyExercisePrefill picks it back up.
 
-import { createBodyMap } from "./body-map-render.js";
+import { createBodyMap, preferredView } from "./body-map-render.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const mapContainer = document.getElementById("bodyMap");
@@ -26,9 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedRegions = []; // slugs, order = tap order (first = primary), no cap
 
+  // Nothing is selected at load, so the regions worth facing are the overdue
+  // ones -- open on the side most of them are on.
+  const initialView = preferredView(overdueRegions);
+
   const highlighter = createBodyMap({
     container: mapContainer,
-    view: "anterior",
+    view: initialView,
     bodyColor: "#f5f5f5", // near-white: flat fill, thin dark stroke does the definition
     highlightColor: "#22c55e", // the one accent color, only on what's selected
     pulsingSlugs: overdueRegions, // "needs training soon" -- white/grey/black cycle, see base.html
@@ -213,6 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
     mapHint.textContent = "Tap a muscle to see exercises";
     closePanel();
   });
+
+  // The Front button carries is-active in the markup, so re-point it if the
+  // overdue regions put us on Back.
+  viewToggleButtons.forEach((b) =>
+    b.classList.toggle(
+      "is-active",
+      (b.dataset.viewToggle === "posterior" ? "posterior" : "anterior") === initialView
+    )
+  );
 
   viewToggleButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
