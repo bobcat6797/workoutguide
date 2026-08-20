@@ -29,8 +29,13 @@ function applyExercisePrefill(form, item) {
   }
 
   if (unitSelect && item.last_weight_unit) unitSelect.value = item.last_weight_unit;
-  if (regionSlugsInput && item.region_slugs) {
-    regionSlugsInput.value = item.region_slugs.join(",");
+  if (Array.isArray(item.region_slugs)) {
+    if (window.setExerciseRegions) {
+      window.setExerciseRegions(item.region_slugs);
+    } else if (regionSlugsInput) {
+      // region-picker.js hasn't initialised yet (it reads this field on load).
+      regionSlugsInput.value = item.region_slugs.join(",");
+    }
   }
   if (Array.isArray(item.last_sets) && item.last_sets.length && window.setExerciseSets) {
     window.setExerciseSets(item.last_sets);

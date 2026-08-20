@@ -39,6 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
       : "Optional: tap to tag muscles, in priority order";
   };
 
+  // Picking a previously-logged exercise prefills its saved regions long
+  // after this ran, so expose a setter (same pattern as setExerciseTags)
+  // instead of leaving the map stuck on the selection read at load. main.js
+  // falls back to writing the hidden field directly when this doesn't exist
+  // yet, which is the case on the query-param path from the muscle map.
+  window.setExerciseRegions = (slugs) => {
+    selected = Array.isArray(slugs) ? slugs.filter(Boolean) : [];
+    sync();
+  };
+
   const toggleRegion = (slug) => {
     const index = selected.indexOf(slug);
     if (index !== -1) {
