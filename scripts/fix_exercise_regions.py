@@ -1,20 +1,26 @@
 """
 Batch-restore body-region tags on exercise_catalog rows that lost them.
 
-Only touches catalog entries that are BOTH:
-  - actually logged at least once (an entry you've really used), and
-  - currently carrying ZERO region tags.
+Only touches catalog entries that are actually logged at least once (an
+entry you've really used), and then only when they either carry ZERO
+region tags or are named explicitly by a --set flag.
 
-Entries that still have tags are never rewritten, so the tagging that
-survived is left exactly as-is. Unlogged wger `suggested_exercise` rows
-are a different table entirely and are never written to.
+Tagging that survived is otherwise left exactly as-is. Unlogged wger
+`suggested_exercise` rows are a different table entirely and are never
+written to.
 
 Tag values come from one of two places, never from a guess:
-  1. OVERRIDES below -- the authoritative path. Slugs you supply win.
+  1. --set "name=slug,slug" -- the authoritative path. Slugs you supply
+     win over everything, including tags already in place.
   2. wger's own anatomical data, via the same rapidfuzz name match
      get_or_create() already uses, and only above MATCH_THRESHOLD.
      Anything that doesn't match confidently is reported and skipped
      rather than tagged with something approximate.
+
+A confident name match does not guarantee a sensible tag set -- wger's
+entry for a close-matching name may target different muscles than yours
+does. Read the dry run before applying, and correct anything wrong with
+--set rather than accepting it.
 
 Usage:
     # report only, writes nothing (start here)
@@ -25,6 +31,10 @@ Usage:
 
     # write the proposed tags
     docker compose exec app python3 scripts/fix_exercise_regions.py --apply
+
+    # supply or correct tags yourself (repeatable; slug order = priority)
+    docker compose exec app python3 scripts/fix_exercise_regions.py --apply \
+        --set "squats=quadriceps,gluteal"
 
     # one exercise at a time
     docker compose exec app python3 scripts/fix_exercise_regions.py --only 41 --apply
@@ -50,28 +60,27 @@ from utils.body_regions import REGION_SLUGS
 # match isn't trustworthy enough to write muscle tags from.
 MATCH_THRESHOLD = 88
 
-# Exercise name (exactly as stored: lowercase) -> region slugs in PRIORITY
-# order. First slug becomes rank 1 (primary target), which is what drives
-# freshness and the volume ranking on the workout page.
-#
-# These win over any wger match. The nine names below are the entries that
-# currently have no tags -- fill in the ones you want set and leave the
-# rest commented out. Valid slugs are in utils/body_regions.py:
-#
-#   chest  biceps  triceps  forearm  front-deltoids  abs  obliques
-#   quadriceps  abductors  back-deltoids  trapezius  upper-back
-#   lower-back  hamstring  gluteal  adductor  calves
-OVERRIDES: dict[str, list[str]] = {
-    # "bicep curls": [],
-    # "db skull crushers": [],
-    # "flat bench press": [],
-    # "lat row": [],
-    # "one arm shoulder row": [],
-    # "pull up": [],
-    # "romanian deadlift": [],
-    # "squats": [],
-    # "tricep ext": [],
-}
+def parse_overrides(raw: list[str] | None) -> dict[str, list[str]]:
+    """
+    Turns repeated --set "exercise name=slug,slug" args into {name: [slugs]}.
+
+    Slug order is priority order: the first becomes rank 1 (the primary
+    target), which is what drives freshness and the volume ranking on the
+    workout page. Valid slugs are the REGIONS list in utils/body_regions.py.
+
+    These live on the command line rather than in a dict in this file so one
+    instance's exercise names and muscle choices don't ship to everyone
+    else's checkout, and so changing them doesn't require an image rebuild.
+    """
+    overrides: dict[str, list[str]] = {}
+    for item in raw or []:
+        name, sep, slug_csv = item.partition("=")
+        name = name.strip().lower()
+        if not sep or not name or not slug_csv.strip():
+            raise SystemExit(f'--set expects "exercise name=slug,slug", got {item!r}')
+        slugs = [s.strip() for s in slug_csv.split(",") if s.strip()]
+        overrides[name] = validate(slugs, f"--set {name!r}")
+    return overrides
 
 
 def resolve_user_id(conn, requested: int | None) -> int:
@@ -145,7 +154,16 @@ def main():
     parser.add_argument("--only", type=int, metavar="ID", help="restrict to one exercise_catalog id")
     parser.add_argument("--user-id", type=int, help="user to operate on")
     parser.add_argument("--export", metavar="PATH", help="dump current tagging to JSON and exit")
+    parser.add_argument(
+        "--set",
+        action="append",
+        metavar="NAME=SLUGS",
+        help='authoritative tags for one exercise, e.g. --set "squats=quadriceps,gluteal". '
+        "Repeatable. Wins over both a wger match and tags already in place.",
+    )
     args = parser.parse_args()
+
+    overrides = parse_overrides(args.set)
 
     conn = get_conn()
     try:
@@ -179,6 +197,20 @@ def main():
             name = row["name"]
             current = row["regions"].split(",") if row["regions"] else []
 
+            # An explicit --set is authoritative and wins even over tags
+            # already in place, so a bad auto-fill can be corrected by
+            # re-running with one more flag instead of going through the UI.
+            if overrides.get(name):
+                slugs = overrides[name]
+                if slugs == current:
+                    kept += 1
+                    print(f"  [{row['id']:>3}] {name:<24} logs={row['log_count']:<3} keeping: {', '.join(current)}  (already matches --set)")
+                    continue
+                note = f"replacing: {', '.join(current)}" if current else "from --set"
+                planned.append((row["id"], name, slugs, "override"))
+                print(f"  [{row['id']:>3}] {name:<24} logs={row['log_count']:<3} -> {', '.join(slugs)}  ({note})")
+                continue
+
             if current:
                 kept += 1
                 print(f"  [{row['id']:>3}] {name:<24} logs={row['log_count']:<3} keeping: {', '.join(current)}")
@@ -188,16 +220,10 @@ def main():
                 skipped.append(f"{name} (endurance -- regions are resistance-only by design)")
                 continue
 
-            if name in OVERRIDES and OVERRIDES[name]:
-                slugs = validate(OVERRIDES[name], f"OVERRIDES[{name!r}]")
-                planned.append((row["id"], name, slugs, "override"))
-                print(f"  [{row['id']:>3}] {name:<24} logs={row['log_count']:<3} -> {', '.join(slugs)}  (your override)")
-                continue
-
             slugs, matched_name, score = wger_proposal(conn, name, suggestion_names)
             if not slugs:
                 detail = f'best "{matched_name}" scored {score:.0f}' if matched_name else "no candidate"
-                skipped.append(f"{name} -- {detail}, below {MATCH_THRESHOLD}; add an OVERRIDES entry")
+                skipped.append(f"{name} -- {detail}, below {MATCH_THRESHOLD}; pass --set to tag it")
                 print(f"  [{row['id']:>3}] {name:<24} logs={row['log_count']:<3} !! no confident match ({detail})")
                 continue
 
@@ -207,7 +233,7 @@ def main():
 
         print(f"\n{kept} already tagged (untouched), {len(planned)} to write, {len(skipped)} skipped")
         if skipped:
-            print("\nSkipped -- these need an OVERRIDES entry to get tagged:")
+            print("\nSkipped -- pass --set to tag these:")
             for line in skipped:
                 print(f"  - {line}")
 
