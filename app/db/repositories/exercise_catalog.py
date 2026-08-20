@@ -24,6 +24,9 @@ def list_for_regions(conn, user_id: int, region_slugs: list[str]):
             (SELECT string_agg(ect.tag_slug, ',' ORDER BY tg.sort_order)
              FROM exercise_catalog_tag ect JOIN tag tg ON tg.slug = ect.tag_slug
              WHERE ect.exercise_catalog_id = ec.id) AS tag_slugs,
+            (SELECT string_agg(ecr.region_slug, ',' ORDER BY ecr.rank)
+             FROM exercise_catalog_region ecr
+             WHERE ecr.exercise_catalog_id = ec.id) AS region_slugs,
             se.image_path,
             last.weight_used AS last_weight_used,
             last.weight_unit AS last_weight_unit,
@@ -119,6 +122,9 @@ def list_all_with_counts_and_last(conn, user_id: int):
             (SELECT string_agg(ect.tag_slug, ',' ORDER BY tg.sort_order)
              FROM exercise_catalog_tag ect JOIN tag tg ON tg.slug = ect.tag_slug
              WHERE ect.exercise_catalog_id = ec.id) AS tag_slugs,
+            (SELECT string_agg(ecr.region_slug, ',' ORDER BY ecr.rank)
+             FROM exercise_catalog_region ecr
+             WHERE ecr.exercise_catalog_id = ec.id) AS region_slugs,
             COUNT(e.id) AS exercise_count,
             last.weight_used AS last_weight_used,
             last.weight_unit AS last_weight_unit,
@@ -230,6 +236,9 @@ def search_all_with_counts(conn, user_id: int, query: str):
             (SELECT string_agg(ect.tag_slug, ',' ORDER BY tg.sort_order)
              FROM exercise_catalog_tag ect JOIN tag tg ON tg.slug = ect.tag_slug
              WHERE ect.exercise_catalog_id = ec.id) AS tag_slugs,
+            (SELECT string_agg(ecr.region_slug, ',' ORDER BY ecr.rank)
+             FROM exercise_catalog_region ecr
+             WHERE ecr.exercise_catalog_id = ec.id) AS region_slugs,
             COUNT(e.id) AS exercise_count,
             last.weight_used AS last_weight_used,
             last.weight_unit AS last_weight_unit,

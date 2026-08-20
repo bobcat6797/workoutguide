@@ -93,7 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (Array.isArray(item.last_sets) && item.last_sets.length) {
       url.searchParams.set("sets_json", JSON.stringify(item.last_sets));
     }
-    if (selectedRegions.length) url.searchParams.set("region_slugs", selectedRegions.join(","));
+    const regions = Array.isArray(item.region_slugs) && item.region_slugs.length
+      ? item.region_slugs
+      : selectedRegions;
+    if (regions.length) url.searchParams.set("region_slugs", regions.join(","));
     window.location.href = url.toString();
   };
 
