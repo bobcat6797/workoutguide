@@ -21,6 +21,11 @@ function applyExercisePrefill(form, item) {
     window.setExerciseTags(item.tags);
   }
 
+  const notesInput = form.querySelector("textarea[name='notes']");
+  if (notesInput && !notesInput.value.trim() && item.last_notes) {
+    notesInput.value = item.last_notes;
+  }
+
   if (item.metric_type === "endurance") {
     if (Array.isArray(item.last_sets) && item.last_sets.length && window.setCardioSets) {
       window.setCardioSets(item.last_sets, item.last_distance_unit);
@@ -67,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
         last_weight_unit: params.get("weight_unit"),
         last_distance_unit: params.get("distance_unit"),
         last_sets: lastSets,
+        last_notes: params.get("notes"),
         region_slugs: params.get("region_slugs") ? params.get("region_slugs").split(",") : null,
       });
     }
@@ -199,4 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+  // The date input is rendered from the server's clock (UTC in the container)
+  // and also survives a bfcache/PWA restore, so the add form can open on a day
+  // that isn't the user's today. Re-derive it from the device on every show.
+  const syncAddExerciseDate = () => {
+    const dateInput = document.querySelector("#exerciseNewForm input[name='date']");
+    if (!dateInput) return;
+    const localIso = (d) =>
+      new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const now = new Date();
+    dateInput.value = localIso(now);
+    dateInput.max = localIso(new Date(now.getTime() + 7 * 86400000));
+  };
+  syncAddExerciseDate();
+  window.addEventListener("pageshow", syncAddExerciseDate);
 });

@@ -35,13 +35,15 @@ def list_for_regions(conn, user_id: int, region_slugs: list[str]):
             last.total_distance AS last_total_distance,
             last.distance_unit AS last_distance_unit,
             last.workout_date AS last_workout_date,
+            last.notes AS last_notes,
             last_sets.sets AS last_sets_json
         FROM exercise_catalog ec
         LEFT JOIN suggested_exercise se ON se.id = ec.suggested_exercise_id
         LEFT JOIN LATERAL (
             SELECT e2.id, e2.weight_used, e2.weight_unit, e2.num_of_sets,
                    e2.total_duration_seconds, e2.total_distance, e2.distance_unit,
-                   w2.date AS workout_date
+                   w2.date AS workout_date,
+                   e2.notes
             FROM exercise e2
             JOIN workout w2 ON w2.id = e2.workout_id
             WHERE e2.exercise_catalog_id = ec.id
@@ -133,13 +135,14 @@ def list_all_with_counts_and_last(conn, user_id: int):
             last.total_distance AS last_total_distance,
             last.distance_unit AS last_distance_unit,
             last.workout_date AS last_workout_date,
+            last.notes AS last_notes,
             last_sets.sets AS last_sets_json
         FROM exercise_catalog ec
         LEFT JOIN exercise e ON e.exercise_catalog_id = ec.id
         LEFT JOIN LATERAL (
             SELECT e2.id, e2.weight_used, e2.weight_unit, e2.num_of_sets,
                    e2.total_duration_seconds, e2.total_distance, e2.distance_unit,
-                   w2.date AS workout_date
+                   w2.date AS workout_date, e2.notes
             FROM exercise e2
             JOIN workout w2 ON w2.id = e2.workout_id
             WHERE e2.exercise_catalog_id = ec.id
@@ -161,7 +164,7 @@ def list_all_with_counts_and_last(conn, user_id: int):
         GROUP BY ec.id, ec.name, ec.metric_type,
                  last.weight_used, last.weight_unit, last.num_of_sets,
                  last.total_duration_seconds, last.total_distance, last.distance_unit,
-                 last.workout_date, last_sets.sets
+                 last.workout_date, last.notes, last_sets.sets
         ORDER BY last.workout_date DESC NULLS LAST, ec.name
     """
     result = conn.execute(text(sql), {"user_id": user_id})
@@ -247,13 +250,14 @@ def search_all_with_counts(conn, user_id: int, query: str):
             last.total_distance AS last_total_distance,
             last.distance_unit AS last_distance_unit,
             last.workout_date AS last_workout_date,
+            last.notes AS last_notes,
             last_sets.sets AS last_sets_json
         FROM exercise_catalog ec
         LEFT JOIN exercise e ON e.exercise_catalog_id = ec.id
         LEFT JOIN LATERAL (
             SELECT e2.id, e2.weight_used, e2.weight_unit, e2.num_of_sets,
                    e2.total_duration_seconds, e2.total_distance, e2.distance_unit,
-                   w2.date AS workout_date
+                   w2.date AS workout_date, e2.notes
             FROM exercise e2
             JOIN workout w2 ON w2.id = e2.workout_id
             WHERE e2.exercise_catalog_id = ec.id
@@ -276,7 +280,7 @@ def search_all_with_counts(conn, user_id: int, query: str):
         GROUP BY ec.id, ec.name, ec.metric_type,
                  last.weight_used, last.weight_unit, last.num_of_sets,
                  last.total_duration_seconds, last.total_distance, last.distance_unit,
-                 last.workout_date, last_sets.sets
+                 last.workout_date, last.notes, last_sets.sets
         ORDER BY ec.name
         LIMIT 25
     """

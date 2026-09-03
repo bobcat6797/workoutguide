@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (Array.isArray(item.last_sets) && item.last_sets.length) {
       url.searchParams.set("sets_json", JSON.stringify(item.last_sets));
     }
+    if (item.last_notes) url.searchParams.set("notes", item.last_notes);
     const regions = Array.isArray(item.region_slugs) && item.region_slugs.length
       ? item.region_slugs
       : selectedRegions;

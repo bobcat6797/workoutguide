@@ -249,12 +249,12 @@ def new_exercise():
 
         all_tags = exercise_catalog_repo.list_tags(conn)
 
-        def render_form(*, error, weight_unit, distance_unit, sets_json, cardio_sets_json, metric_type, tags):
+        def render_form(*, error, weight_unit, distance_unit, sets_json, cardio_sets_json, metric_type, tags, date_value=None):
             return render_template(
                 "exercises/new.html",
                 workout=workout,
                 error=error,
-                today=today_str,
+                today=date_value or today_str,
                 max_date=max_date_str,
                 weight_units=WEIGHT_UNITS,
                 weight_unit_selected=weight_unit,
@@ -278,6 +278,7 @@ def new_exercise():
             distance_unit = request.form.get("distance_unit", "").strip() or default_distance_unit
             sets_json_raw = request.form.get("sets_json", "[]")
             cardio_sets_json_raw = request.form.get("cardio_sets_json", "[]")
+            date_str = request.form.get("date", "").strip()
 
             def form_error(msg):
                 return render_form(
@@ -288,6 +289,7 @@ def new_exercise():
                     cardio_sets_json=cardio_sets_json_raw,
                     metric_type=metric_type,
                     tags=tags_raw,
+                    date_value=date_str,
                 )
 
             if metric_error:
@@ -316,8 +318,6 @@ def new_exercise():
 
             if workout is None:
                 # No workout_id passed → "new workout + exercise" flow.
-                date_str = request.form.get("date", "").strip()
-
                 if not date_str:
                     return form_error("Date is required when creating a new workout.")
 
@@ -737,6 +737,7 @@ def exercise_suggestions():
             "last_distance_unit": row.get("last_distance_unit"),
             "last_logged": _format_last_logged(row.get("last_workout_date")),
             "last_sets": row.get("last_sets_json") or [],
+            "last_notes": row.get("last_notes"),
         }
         for row in items
     ]
@@ -772,6 +773,7 @@ def region_shortlist():
             "last_num_of_sets": row.get("last_num_of_sets"),
             "last_logged": _format_last_logged(row.get("last_workout_date")),
             "last_sets": row.get("last_sets_json") or [],
+            "last_notes": row.get("last_notes"),
         }
         for row in your_rows
     ]
